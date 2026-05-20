@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1923">
+<title>Silver's Wallet</title>
+<link rel="manifest" id="pwa-manifest">
+<style>
+:root {
+  --bg: #0f1923;
+  --bg2: #162030;
+  --bg3: #1e2d3d;
+  --bg4: #243447;
+  --card: #1a2838;
+  --border: #2a3f55;
+  --border2: #3a5068;
+  --gold: #c9a84c;
+  --gold2: #e8c96a;
+  --gold3: #f5e0a0;
+  --silver: #a8b8cc;
+  --silver2: #c8d8e8;
+  --green: #2ecc7a;
+  --green2: #1a9955;
+  --red: #e05555;
+  --red2: #b03030;
+  --blue: #4a9eff;
+  --text: #e8f0f8;
+  --text2: #8fa8c0;
+  --text3: #5a7890;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Trebuchet MS',Georgia,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:15px}
+button{cursor:pointer;border:none;background:none;color:inherit;font-family:inherit;font-size:inherit}
+input,select,textarea{font-family:inherit;font-size:14px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:10px 14px;width:100%;outline:none;transition:.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,.15)}
+select option{background:var(--bg3)}
+textarea{resize:vertical;min-height:80px}
+label{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;display:block}
+
+/* PIN Screen */
+#pin-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:2rem}
+.pin-logo{font-size:2.5rem;color:var(--gold);margin-bottom:.5rem;text-shadow:0 0 20px rgba(201,168,76,.3)}
+.pin-title{font-size:1.5rem;font-weight:700;color:var(--gold2);letter-spacing:2px;margin-bottom:.25rem}
+.pin-sub{font-size:12px;color:var(--text2);margin-bottom:2.5rem;letter-spacing:1px}
+.pin-dots{display:flex;gap:16px;margin-bottom:2rem}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:.2s}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;width:100%}
+.pin-btn{height:68px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:1.4rem;font-weight:600;transition:.15s;display:flex;align-items:center;justify-content:center;letter-spacing:1px}
+.pin-btn:active{background:var(--bg4);border-color:var(--gold);transform:scale(.96)}
+.pin-btn.del{font-size:1rem;color:var(--red)}
+.pin-btn.confirm{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0f1923;font-size:.9rem;font-weight:700;border:none}
+.pin-msg{margin-top:1.5rem;font-size:13px;color:var(--red);min-height:20px;text-align:center}
+.pin-setup-hint{font-size:12px;color:var(--text3);margin-top:1rem;text-align:center}
+
+/* App Layout */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.visible{display:flex}
+
+/* Top Bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-title{font-size:1.1rem;font-weight:700;color:var(--gold2);letter-spacing:1px}
+.topbar-btn{width:38px;height:38px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--silver);font-size:1.2rem}
+
+/* Sidebar */
+#sidebar{position:fixed;left:-280px;top:0;bottom:0;width:280px;background:var(--card);border-right:1px solid var(--border);z-index:200;transition:.3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding-bottom:2rem}
+#sidebar.open{left:0}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+.sidebar-overlay.visible{display:block}
+.sidebar-header{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:1.4rem;font-weight:700;color:var(--gold2);letter-spacing:1px}
+.sidebar-ver{font-size:11px;color:var(--text3);margin-top:2px}
+.nav-section{padding:12px 12px 4px;font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-radius:var(--radius-sm);margin:2px 8px;cursor:pointer;transition:.15s;color:var(--text2);font-size:14px;font-weight:500}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(201,168,76,.12);color:var(--gold2)}
+.nav-icon{font-size:1.3rem;width:24px;text-align:center}
+
+/* Pages */
+.page{display:none;padding:16px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.card-title{font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+
+/* Stat Cards */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat-label{font-size:10px;color:var(--text2);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.stat-value{font-size:1.3rem;font-weight:700;color:var(--gold2);line-height:1.1}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+.stat-divider{border:none;border-top:1px solid var(--border);margin:8px 0}
+.stat-items{list-style:none}
+.stat-item{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text2);padding:2px 0;line-height:1.3}
+.stat-item-amt{font-size:10px;color:var(--text3);white-space:nowrap;margin-left:4px}
+.stat-more{font-size:10px;color:var(--text3);text-align:center;padding-top:2px}
+.stat-empty{font-size:10px;color:var(--text3);text-align:center;padding:4px 0}
+
+/* Balance Hero */
+.balance-hero{background:linear-gradient(135deg,#1a2838,#0f1923);border:1px solid var(--gold);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+.balance-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.06),transparent 60%)}
+.balance-label{font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;font-weight:700}
+.balance-amount{font-size:2rem;font-weight:700;color:var(--gold2);letter-spacing:1px}
+.balance-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:var(--radius-sm);font-weight:600;font-size:14px;transition:.15s;cursor:pointer}
+.btn:active{transform:scale(.97)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0f1923;border:none}
+.btn-gold:hover{filter:brightness(1.08)}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--silver)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold2)}
+.btn-danger{background:var(--red2);color:white;border:none}
+.btn-green{background:var(--green2);color:white;border:none}
+.btn-sm{padding:7px 14px;font-size:12px}
+.btn-full{width:100%}
+
+/* Forms */
+.form-group{margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Category Grid */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.cat-btn{padding:10px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3);text-align:center;cursor:pointer;transition:.15s;font-size:11px;color:var(--text2)}
+.cat-btn:hover,.cat-btn.selected{border-color:var(--gold);background:rgba(201,168,76,.1);color:var(--gold2)}
+.cat-emoji{font-size:1.4rem;display:block;margin-bottom:3px}
+.cat-name{font-size:10px;line-height:1.2}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--bg2);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;border-top:1px solid var(--border)}
+.modal-title{font-size:1.1rem;font-weight:700;color:var(--gold2);margin-bottom:16px}
+.modal-close{float:right;font-size:1.4rem;color:var(--text2);line-height:1;cursor:pointer;margin-top:-2px}
+
+/* Tables */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius-sm);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+thead th{background:var(--bg3);color:var(--gold);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg3)}
+.td-items{font-size:11px;line-height:1.6}
+.td-income{color:var(--green)}
+.td-expense{color:var(--red)}
+.td-bold{font-weight:700;color:var(--text)}
+.td-muted{color:var(--text3);font-size:11px}
+
+/* Tags / Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(46,204,122,.12);color:var(--green)}
+.badge-red{background:rgba(224,85,85,.12);color:var(--red)}
+.badge-gold{background:rgba(201,168,76,.12);color:var(--gold2)}
+.badge-blue{background:rgba(74,158,255,.12);color:var(--blue)}
+
+/* Section Header */
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:13px;font-weight:700;color:var(--silver2);letter-spacing:.5px}
+
+/* Alert Popup */
+.alert-box{background:var(--bg2);border:1px solid var(--red);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.alert-title{color:var(--red);font-weight:700;font-size:1rem;margin-bottom:8px}
+.alert-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+
+/* Ledger Balance Banner */
+.ledger-banner{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ledger-banner-icon{font-size:1.3rem}
+.ledger-banner-text{font-size:13px;color:var(--text2)}
+.ledger-banner-amt{font-size:1.1rem;font-weight:700;color:var(--gold2)}
+
+/* Net Worth */
+.networth-card{border-radius:var(--radius);padding:18px;margin-bottom:14px;text-align:center}
+.networth-card.positive{background:rgba(46,204,122,.08);border:1px solid rgba(46,204,122,.25)}
+.networth-card.negative{background:rgba(224,85,85,.08);border:1px solid rgba(224,85,85,.25)}
+.networth-card.neutral{background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.25)}
+.networth-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.networth-label.positive{color:var(--green)}
+.networth-label.negative{color:var(--red)}
+.networth-label.neutral{color:var(--blue)}
+.networth-value{font-size:1.8rem;font-weight:700}
+.advice-box{background:var(--bg3);border-radius:var(--radius-sm);padding:14px;font-size:13px;color:var(--text2);line-height:1.6;border-left:3px solid var(--gold)}
+
+/* Secret Vault */
+.secret-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.secret-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer}
+.secret-header:hover{background:var(--bg3)}
+.secret-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.secret-body{padding:0 16px 16px;border-top:1px solid var(--border);background:var(--bg3)}
+.secret-desc{font-size:13px;color:var(--text2);margin:12px 0;line-height:1.6}
+.secret-preview{max-width:100%;max-height:200px;border-radius:var(--radius-sm);margin-top:8px}
+.secret-file{display:flex;align-items:center;gap:8px;background:var(--bg4);padding:10px 14px;border-radius:var(--radius-sm);margin-top:8px;font-size:13px}
+
+/* Monthly */
+.week-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.week-title{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+.week-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.week-stat{background:var(--bg3);border-radius:var(--radius-sm);padding:10px;text-align:center}
+.week-stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.week-stat-val{font-size:13px;font-weight:700}
+.week-top{margin-top:10px}
+.week-top-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:700}
+.week-top-item{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding:2px 0}
+
+/* Loan list */
+.loan-item{background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;cursor:pointer;border:1px solid var(--border)}
+.loan-item:hover,.loan-item.selected{border-color:var(--gold);background:rgba(201,168,76,.06)}
+.loan-name{font-size:14px;font-weight:600;color:var(--text)}
+.loan-detail{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* Asset/Liability item */
+.al-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.al-item:last-child{border-bottom:none}
+.al-name{color:var(--text2)}
+.al-amt{font-weight:600;color:var(--gold2)}
+.al-amt.red{color:var(--red)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--bg3);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px}
+.tab{flex:1;padding:8px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:.15s}
+.tab.active{background:var(--gold);color:#0f1923}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Responsive */
+@media(min-width:480px){
+  .cat-grid{grid-template-columns:repeat(4,1fr)}
+  .modal{border-radius:var(--radius)}
+  .modal-overlay{align-items:center;padding:20px}
+}
+</style>
+<script>
+// Inject PWA manifest dynamically (works from file:// and http://)
+(function(){
+  const manifest = {
+    name:"Silver's Wallet",short_name:"SW Wallet",
+    start_url:".",display:"standalone",
+    background_color:"#0f1923",theme_color:"#0f1923",
+    description:"Personal finance manager",
+    icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f1923'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E%F0%9F%92%8E%3C/text%3E%3C/svg%3E",sizes:"any",type:"image/svg+xml"}]
+  };
+  const blob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('pwa-manifest').href = url;
+})();
+// Service Worker for full offline support
+if('serviceWorker' in navigator){
+  const swCode = `
+const CACHE='sw-v1';
+const SHELL=[self.location.pathname];
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch',e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
+    if(res.status===200){
+      const clone=res.clone();
+      caches.open(CACHE).then(c=>c.put(e.request,clone));
+    }
+    return res;
+  }).catch(()=>caches.match(e.request))));
+});`;
+  const blob = new Blob([swCode],{type:'text/javascript'});
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
+</script>
+</head>
+<body>
+
+<!-- PIN Screen -->
+<div id="pin-screen">
+  <div class="pin-logo">💎</div>
+  <div class="pin-title">SILVER'S WALLET</div>
+  <div class="pin-sub" id="pin-sub">ENTER PIN</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn confirm" onclick="pinConfirm()">OK</button>
+  </div>
+  <div class="pin-msg" id="pin-msg"></div>
+  <div class="pin-setup-hint" id="pin-hint"></div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">💎 Silver's Wallet</div>
+      <div class="sidebar-ver">Smart Finance Manager</div>
+    </div>
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" data-page="today" onclick="navigate('today')"><span class="nav-icon">🏠</span>Today</div>
+    <div class="nav-item" data-page="income" onclick="navigate('income')"><span class="nav-icon">💰</span>Income</div>
+    <div class="nav-item" data-page="spending" onclick="navigate('spending')"><span class="nav-icon">💸</span>Spending</div>
+    <div class="nav-section">Records</div>
+    <div class="nav-item" data-page="ledger" onclick="navigate('ledger')"><span class="nav-icon">📒</span>Ledger</div>
+    <div class="nav-item" data-page="monthly" onclick="navigate('monthly')"><span class="nav-icon">📅</span>Monthly Summary</div>
+    <div class="nav-section">Assets & Liabilities</div>
+    <div class="nav-item" data-page="value" onclick="navigate('value')"><span class="nav-icon">🏦</span>Value Folder</div>
+    <div class="nav-item" data-page="safe" onclick="navigate('safe')"><span class="nav-icon">🔒</span>Safe Folder</div>
+    <div class="nav-item" data-page="auditor" onclick="navigate('auditor')"><span class="nav-icon">🔍</span>Auditor</div>
+    <div class="nav-section">Vault</div>
+    <div class="nav-item" data-page="secrets" onclick="navigate('secrets')"><span class="nav-icon">🔐</span>Secrets Vault</div>
+    <div class="nav-section">Settings</div>
+    <div class="nav-item" onclick="changePin()"><span class="nav-icon">🔑</span>Change PIN</div>
+    <div class="nav-item" onclick="exportData()"><span class="nav-icon">📤</span>Export Data</div>
+    <div class="nav-item" onclick="clearAllData()"><span class="nav-icon">🗑️</span>Clear All Data</div>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <button class="topbar-btn" onclick="openSidebar()">☰</button>
+    <div class="topbar-title" id="page-title">TODAY</div>
+    <button class="topbar-btn" onclick="navigate('income')" title="Add Income">+</button>
+  </div>
+
+  <!-- Pages -->
+  <div style="flex:1;overflow-y:auto;padding-bottom:20px">
+
+    <!-- TODAY PAGE -->
+    <div class="page active" id="page-today">
+      <div class="balance-hero" id="today-balance"></div>
+      <div class="stat-grid" id="today-stats"></div>
+      <div class="card">
+        <div class="section-hd">
+          <div class="section-title">Recent Transactions</div>
+          <button class="btn btn-sm btn-outline" onclick="navigate('ledger')">View All</button>
+        </div>
+        <div id="recent-txns"></div>
+      </div>
+    </div>
+
+    <!-- INCOME PAGE -->
+    <div class="page" id="page-income">
+      <div class="card">
+        <div class="modal-title">Add Income</div>
+        <div class="cat-grid" id="income-cats"></div>
+        <div id="income-form" style="display:none">
+          <div id="loan-repay-section" style="display:none">
+            <div class="form-group">
+              <label>Select Loan Being Repaid</label>
+              <div id="active-loans-list"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Amount (UGX)</label>
+            <input type="number" id="inc-amount" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="inc-desc" placeholder="Optional note">
+          </div>
+          <div id="loan-received-fields" style="display:none">
+            <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:700;color:var(--gold2);letter-spacing:.5px;margin-bottom:12px">🏦 LOAN RECORDING</div>
+              <div class="form-group">
+                <label>Lender Name</label>
+                <input type="text" id="inc-lender" placeholder="Who is lending you money?">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Start Date</label>
+                  <input type="date" id="inc-loan-start">
+                </div>
+                <div class="form-group">
+                  <label>Due Date</label>
+                  <input type="date" id="inc-loan-due">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Notes / Terms</label>
+                <textarea id="inc-loan-notes" placeholder="Interest rate, conditions..." style="min-height:60px"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="inc-date">
+          </div>
+          <button class="btn btn-gold btn-full" onclick="saveIncome()">💾 Save Income</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPENDING PAGE -->
+    <div class="page" id="page-spending">
+      <div id="insufficient-alert" style="display:none" class="alert-box">
+        <div class="alert-title">⚠️ Insufficient Cash</div>
+        <div id="insufficient-content"></div>
+        <div style="margin-top:12px">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:600">Add income first:</div>
+          <div class="cat-grid" id="insufficient-income-cats"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="modal-title">Add Spending</div>
+        <div class="cat-grid" id="spend-cats"></div>
+        <div id="spend-form" style="display:none">
+          <div id="loan-given-fields" style="display:none">
+            <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:700;color:var(--gold2);letter-spacing:.5px;margin-bottom:12px">🤝 LOAN DETAILS</div>
+              <div class="form-group">
+                <label>Borrower Name</label>
+                <input type="text" id="sp-borrower" placeholder="Who are you lending to?">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Due Date</label>
+                  <input type="date" id="sp-due">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="payment-subcats" style="display:none">
+            <div class="form-group">
+              <label>Payment Type</label>
+              <div class="cat-grid" id="payment-sub-grid" style="margin-bottom:8px"></div>
+            </div>
+            <div id="loan-payment-section" style="display:none">
+              <div class="form-group">
+                <label>Select Loan to Pay</label>
+                <div id="payable-loans-list"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Amount (UGX)</label>
+            <input type="number" id="sp-amount" placeholder="0" min="0" oninput="checkBalance()">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="sp-desc" placeholder="What did you spend on?">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="sp-date">
+          </div>
+          <div id="balance-warning" style="display:none;margin-bottom:12px" class="alert-box">
+            <div class="alert-title">⚠️ Exceeds Cash at Hand</div>
+            <div id="balance-warning-content"></div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="sp-notes" placeholder="Optional notes"></textarea>
+          </div>
+          <button class="btn btn-gold btn-full" onclick="saveSpending()">💾 Save Spending</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEDGER PAGE -->
+    <div class="page" id="page-ledger">
+      <div class="ledger-banner" id="ledger-banner"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:80px">Date</th>
+              <th style="min-width:110px">Opening Bal<br><span style="font-weight:400;color:var(--text3);font-size:9px">12:00 AM</span></th>
+              <th style="min-width:140px">Income Items</th>
+              <th style="min-width:140px">Expense Items</th>
+              <th style="min-width:100px">Total Expenses<br><span style="font-weight:400;color:var(--text3);font-size:9px">11:59 PM</span></th>
+              <th style="min-width:110px">Closing Bal<br><span style="font-weight:400;color:var(--text3);font-size:9px">11:59 PM</span></th>
+            </tr>
+          </thead>
+          <tbody id="ledger-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MONTHLY SUMMARY PAGE -->
+    <div class="page" id="page-monthly">
+      <div class="form-group">
+        <label>Select Month</label>
+        <input type="month" id="monthly-month">
+      </div>
+      <div id="monthly-content"></div>
+    </div>
+
+    <!-- VALUE FOLDER PAGE -->
+    <div class="page" id="page-value">
+      <div class="tabs">
+        <div class="tab active" onclick="switchValTab('assets',this)">Assets</div>
+        <div class="tab" onclick="switchValTab('liabilities',this)">Liabilities</div>
+      </div>
+      <div id="val-assets-tab">
+        <div class="section-hd">
+          <div class="section-title">💼 Assets</div>
+          <button class="btn btn-sm btn-gold" onclick="openAddAsset()">+ Add</button>
+        </div>
+        <div class="card" id="assets-list"></div>
+        <div class="card" style="text-align:center">
+          <div class="stat-label">Total Assets Value</div>
+          <div class="stat-value" id="total-assets-val" style="font-size:1.5rem"></div>
+        </div>
+      </div>
+      <div id="val-liabilities-tab" style="display:none">
+        <div class="section-hd">
+          <div class="section-title">📋 Liabilities</div>
+          <button class="btn btn-sm btn-gold" onclick="openAddLiability()">+ Add</button>
+        </div>
+        <div class="card" id="liabilities-list"></div>
+        <div class="card" style="text-align:center">
+          <div class="stat-label">Total Liabilities Value</div>
+          <div class="stat-value red" id="total-liabilities-val" style="font-size:1.5rem"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAFE FOLDER PAGE -->
+    <div class="page" id="page-safe">
+      <div class="tabs">
+        <div class="tab active" onclick="switchSafeTab('given',this)">Loans Given</div>
+        <div class="tab" onclick="switchSafeTab('borrowed',this)">Loans Taken</div>
+      </div>
+      <div id="safe-given-tab">
+        <div class="section-hd">
+          <div class="section-title">💸 Loans Given Out</div>
+        </div>
+        <div id="loans-given-list"></div>
+      </div>
+      <div id="safe-borrowed-tab" style="display:none">
+        <div class="section-hd">
+          <div class="section-title">🏦 Loans Borrowed</div>
+          <button class="btn btn-sm btn-gold" onclick="openAddBorrowedLoan()">+ Add</button>
+        </div>
+        <div id="loans-borrowed-list"></div>
+      </div>
+    </div>
+
+    <!-- AUDITOR PAGE -->
+    <div class="page" id="page-auditor">
+      <div id="auditor-content"></div>
+    </div>
+
+    <!-- SECRETS VAULT PAGE -->
+    <div class="page" id="page-secrets">
+      <div class="section-hd">
+        <div class="section-title">🔐 Secrets Vault</div>
+        <button class="btn btn-sm btn-gold" onclick="openAddSecret()">+ Add Secret</button>
+      </div>
+      <div id="secrets-list"></div>
+    </div>
+
+  </div><!-- end scroll -->
+</div><!-- end app -->
+
+<!-- Modals -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ============================================================
+// DATA STORE
+// ============================================================
+let DB = {
+  transactions: [],
+  loans: [],
+  secrets: [],
+  assets: [],
+  liabilities: []
+};
+let PIN = '';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem('sw_db');
+    if (raw) DB = JSON.parse(raw);
+  } catch(e) {}
+  // Ensure arrays
+  ['transactions','loans','secrets','assets','liabilities'].forEach(k => {
+    if (!Array.isArray(DB[k])) DB[k] = [];
+  });
+  // Fix old loan data: person -> bank
+  DB.loans.forEach(l => {
+    if (!l.bank && l.person) l.bank = l.person;
+    if (!l.type) l.type = 'given';
+    if (l.settled === undefined) l.settled = false;
+    if (!l.remaining && l.remaining !== 0) l.remaining = l.amount;
+  });
+  PIN = localStorage.getItem('sw_pin') || '';
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem('sw_db', JSON.stringify(DB));
+  localStorage.setItem('sw_pin', PIN);
+}
+
+// ============================================================
+// CURRENCY
+// ============================================================
+function fmt(n) {
+  return 'UGX ' + Math.abs(Math.round(n)).toLocaleString('en-US');
+}
+
+// ============================================================
+// CASH AT HAND (transactions only)
+// ============================================================
+function getCashAtHand(upToDate) {
+  let bal = 0;
+  let txns = DB.transactions.slice().sort((a,b) => a.date.localeCompare(b.date));
+  txns.forEach(t => {
+    if (!upToDate || t.date <= upToDate) {
+      if (t.type === 'income') bal += Number(t.amount);
+      else bal -= Number(t.amount);
+    }
+  });
+  return bal;
+}
+
+function getToday() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ============================================================
+// PIN LOGIC
+// ============================================================
+let pinEntry = '';
+let pinMode = 'enter'; // 'enter','setup','change1','change2'
+let pinTemp = '';
+
+loadData();
+
+function initPin() {
+  if (!PIN) {
+    pinMode = 'setup';
+    document.getElementById('pin-sub').textContent = 'CREATE YOUR PIN';
+    document.getElementById('pin-hint').textContent = 'Choose a 4-digit PIN to secure your wallet';
+  } else {
+    pinMode = 'enter';
+    document.getElementById('pin-sub').textContent = 'ENTER PIN';
+  }
+}
+
+function pinPress(d) {
+  if (pinEntry.length < 4) {
+    pinEntry += d;
+    updatePinDots();
+    if (pinEntry.length === 4 && pinMode === 'enter') pinConfirm();
+  }
+}
+
+function pinDel() {
+  pinEntry = pinEntry.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots() {
+  for (let i=0;i<4;i++) {
+    document.getElementById('d'+i).className = 'pin-dot' + (i < pinEntry.length ? ' filled' : '');
+  }
+}
+
+function pinConfirm() {
+  if (pinEntry.length < 4) return;
+  if (pinMode === 'setup') {
+    if (!pinTemp) {
+      pinTemp = pinEntry;
+      pinEntry = '';
+      updatePinDots();
+      document.getElementById('pin-sub').textContent = 'CONFIRM PIN';
+      document.getElementById('pin-hint').textContent = 'Enter your PIN again to confirm';
+    } else {
+      if (pinEntry === pinTemp) {
+        PIN = pinEntry;
+        saveData();
+        unlockApp();
+      } else {
+        document.getElementById('pin-msg').textContent = "PINs don't match. Try again.";
+        pinEntry = ''; pinTemp = '';
+        updatePinDots();
+        document.getElementById('pin-sub').textContent = 'CREATE YOUR PIN';
+      }
+    }
+  } else if (pinMode === 'change1') {
+    if (pinEntry === PIN) {
+      pinTemp = '';
+      pinEntry = '';
+      updatePinDots();
+      pinMode = 'change2';
+      document.getElementById('pin-sub').textContent = 'NEW PIN';
+      document.getElementById('pin-msg').textContent = '';
+    } else {
+      document.getElementById('pin-msg').textContent = 'Wrong PIN';
+      pinEntry = ''; updatePinDots();
+    }
+  } else if (pinMode === 'change2') {
+    if (!pinTemp) {
+      pinTemp = pinEntry;
+      pinEntry = '';
+      updatePinDots();
+      document.getElementById('pin-sub').textContent = 'CONFIRM NEW PIN';
+    } else {
+      if (pinEntry === pinTemp) {
+        PIN = pinEntry;
+        saveData();
+        unlockApp();
+        pinMode = 'enter';
+        showModal('✅ PIN changed successfully!', '<button class="btn btn-gold btn-full" onclick="closeModal()">OK</button>');
+      } else {
+        document.getElementById('pin-msg').textContent = "PINs don't match";
+        pinEntry = ''; pinTemp = '';
+        updatePinDots();
+        document.getElementById('pin-sub').textContent = 'NEW PIN';
+      }
+    }
+  } else {
+    if (pinEntry === PIN) {
+      unlockApp();
+    } else {
+      document.getElementById('pin-msg').textContent = '❌ Incorrect PIN';
+      pinEntry = ''; updatePinDots();
+    }
+  }
+}
+
+function unlockApp() {
+  document.getElementById('pin-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  navigate('today');
+}
+
+function changePin() {
+  closeSidebar();
+  document.getElementById('pin-screen').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+  pinMode = 'change1';
+  pinEntry = ''; pinTemp = '';
+  updatePinDots();
+  document.getElementById('pin-sub').textContent = 'CURRENT PIN';
+  document.getElementById('pin-msg').textContent = '';
+  document.getElementById('pin-hint').textContent = 'Enter your current PIN first';
+}
+
+initPin();
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentPage = 'today';
+
+function navigate(page) {
+  closeSidebar();
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('page-'+page);
+  if (el) el.classList.add('active');
+  const nav = document.querySelector('[data-page="'+page+'"]');
+  if (nav) nav.classList.add('active');
+  const titles = {
+    today:'TODAY', income:'INCOME', spending:'SPENDING',
+    ledger:'LEDGER', monthly:'MONTHLY SUMMARY',
+    value:'VALUE FOLDER', safe:'SAFE FOLDER',
+    auditor:'AUDITOR', secrets:'SECRETS VAULT'
+  };
+  document.getElementById('page-title').textContent = titles[page] || page.toUpperCase();
+  renderPage(page);
+}
+
+function renderPage(page) {
+  if (page === 'today') renderToday();
+  else if (page === 'income') renderIncomePage();
+  else if (page === 'spending') renderSpendingPage();
+  else if (page === 'ledger') renderLedger();
+  else if (page === 'monthly') renderMonthly();
+  else if (page === 'value') renderValue();
+  else if (page === 'safe') renderSafe();
+  else if (page === 'auditor') renderAuditor();
+  else if (page === 'secrets') renderSecrets();
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('visible');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+// ============================================================
+// TODAY PAGE
+// ============================================================
+function renderToday() {
+  const today = getToday();
+  const cash = getCashAtHand();
+  const todayTxns = DB.transactions.filter(t => t.date === today);
+  const todayInc = todayTxns.filter(t => t.type === 'income');
+  const todayExp = todayTxns.filter(t => t.type === 'spending');
+  const totalInc = todayInc.reduce((s,t) => s + Number(t.amount), 0);
+  const totalExp = todayExp.reduce((s,t) => s + Number(t.amount), 0);
+
+  // Balance hero
+  document.getElementById('today-balance').innerHTML = `
+    <div class="balance-label">💵 Cash at Hand</div>
+    <div class="balance-amount">${fmt(cash)}</div>
+    <div class="balance-sub">${cash >= 0 ? 'Available to spend' : '⚠️ Deficit'}</div>
+  `;
+
+  // Stat cards
+  function buildItemList(items, emptyMsg) {
+    if (!items.length) return `<div class="stat-empty">${emptyMsg}</div>`;
+    const shown = items.slice(0,5);
+    const more = items.length - shown.length;
+    let html = shown.map(t => `<li class="stat-item"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.category}${t.description?' — '+t.description:''}</span><span class="stat-item-amt">${fmt(t.amount)}</span></li>`).join('');
+    if (more > 0) html += `<div class="stat-more">+${more} more</div>`;
+    return `<ul class="stat-items">${html}</ul>`;
+  }
+
+  document.getElementById('today-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Today's Income</div>
+      <div class="stat-value green">${fmt(totalInc)}</div>
+      <hr class="stat-divider">
+      ${buildItemList(todayInc, 'No income today')}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Today's Spending</div>
+      <div class="stat-value red">${fmt(totalExp)}</div>
+      <hr class="stat-divider">
+      ${buildItemList(todayExp, 'No spending today')}
+    </div>
+  `;
+
+  // Recent transactions (last 8)
+  const recent = DB.transactions.slice().sort((a,b) => b.date.localeCompare(a.date)||b.id-a.id).slice(0,8);
+  if (!recent.length) {
+    document.getElementById('recent-txns').innerHTML = '<div style="text-align:center;color:var(--text3);font-size:13px;padding:20px">No transactions yet. Start by adding income!</div>';
+    return;
+  }
+  document.getElementById('recent-txns').innerHTML = recent.map(t => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${t.category}</div>
+        <div style="font-size:11px;color:var(--text3)">${t.date}${t.description?' · '+t.description:''}</div>
+      </div>
+      <div style="font-weight:700;font-size:14px;color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// INCOME CATEGORIES
+// ============================================================
+const INCOME_CATS = [
+  {id:'salary', emoji:'💼', name:'Salary'},
+  {id:'loan_received', emoji:'🏦', name:'Loan Received'},
+  {id:'gift', emoji:'🎁', name:'Gift'},
+  {id:'business', emoji:'🏪', name:'Business'},
+  {id:'investment', emoji:'📈', name:'Investment'},
+  {id:'loan_repay', emoji:'💸', name:'Loan Repayment'},
+  {id:'other_inc', emoji:'💵', name:'Other'},
+];
+
+const SPEND_CATS = [
+  {id:'food', emoji:'🍔', name:'Food'},
+  {id:'transport', emoji:'🚗', name:'Transport'},
+  {id:'real_estate', emoji:'🏠', name:'Real Estate'},
+  {id:'physical', emoji:'📦', name:'Physical Asset'},
+  {id:'financial', emoji:'📊', name:'Financial Asset'},
+  {id:'intangible', emoji:'💡', name:'Intangible Asset'},
+  {id:'business_buy', emoji:'🏢', name:'Business Buy'},
+  {id:'payment', emoji:'🧾', name:'Payments'},
+  {id:'luxury', emoji:'💎', name:'Luxury'},
+  {id:'personal', emoji:'👤', name:'Personal'},
+  {id:'loan_given', emoji:'🤝', name:'Loan Given Out'},
+  {id:'others', emoji:'📁', name:'Others'},
+];
+
+let selectedIncCat = null;
+let selectedSpendCat = null;
+let selectedRepayLoan = null;
+
+function renderIncomePage() {
+  selectedIncCat = null;
+  selectedRepayLoan = null;
+  document.getElementById('income-form').style.display = 'none';
+  document.getElementById('income-cats').innerHTML = INCOME_CATS.map(c => `
+    <div class="cat-btn" id="icat-${c.id}" onclick="selectIncCat('${c.id}')">
+      <span class="cat-emoji">${c.emoji}</span>
+      <span class="cat-name">${c.name}</span>
+    </div>
+  `).join('');
+  document.getElementById('inc-date').value = getToday();
+}
+
+function selectIncCat(id) {
+  selectedIncCat = id;
+  document.querySelectorAll('#income-cats .cat-btn').forEach(b => b.classList.remove('selected'));
+  const el = document.getElementById('icat-'+id);
+  if (el) el.classList.add('selected');
+  document.getElementById('income-form').style.display = 'block';
+  document.getElementById('loan-repay-section').style.display = id === 'loan_repay' ? 'block' : 'none';
+  document.getElementById('loan-received-fields').style.display = id === 'loan_received' ? 'block' : 'none';
+  if (id === 'loan_repay') {
+    renderActiveLoansList();
+  }
+  if (id === 'loan_received') {
+    const lsEl = document.getElementById('inc-loan-start');
+    if (lsEl && !lsEl.value) lsEl.value = getToday();
+  }
+}
+
+function renderActiveLoansList() {
+  const activeLoans = DB.loans.filter(l => l.type === 'given' && !l.settled);
+  const el = document.getElementById('active-loans-list');
+  if (!activeLoans.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:10px 0">No active loans given out.</div>';
+    return;
+  }
+  el.innerHTML = activeLoans.map(l => `
+    <div class="loan-item ${selectedRepayLoan === l.id ? 'selected':''}" onclick="selectRepayLoan(${l.id})">
+      <div class="loan-name">${l.bank}</div>
+      <div class="loan-detail">Remaining: ${fmt(l.remaining || l.amount)} · Due: ${l.dueDate||'N/A'}</div>
+    </div>
+  `).join('');
+}
+
+function selectRepayLoan(id) {
+  selectedRepayLoan = id;
+  const loan = DB.loans.find(l => l.id === id);
+  if (loan) {
+    document.getElementById('inc-amount').value = loan.remaining || loan.amount;
+    document.getElementById('inc-desc').value = 'Repayment from ' + loan.bank;
+  }
+  renderActiveLoansList();
+}
+
+function saveIncome() {
+  const cat = INCOME_CATS.find(c => c.id === selectedIncCat);
+  if (!cat) { alert('Please select an income category.'); return; }
+  const amount = parseFloat(document.getElementById('inc-amount').value);
+  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  const desc = document.getElementById('inc-desc').value;
+  const date = document.getElementById('inc-date').value || getToday();
+
+  if (selectedIncCat === 'loan_repay') {
+    if (!selectedRepayLoan) { alert('Please select which loan is being repaid.'); return; }
+    const loan = DB.loans.find(l => l.id === selectedRepayLoan);
+    if (loan) {
+      loan.remaining = Math.max(0, (loan.remaining||loan.amount) - amount);
+      if (loan.remaining <= 0) {
+        loan.settled = true;
+        // Remove from assets
+        DB.assets = DB.assets.filter(a => a.name !== 'Loan Receivable: ' + loan.bank);
+      } else {
+        // Update asset
+        const asset = DB.assets.find(a => a.name === 'Loan Receivable: ' + loan.bank);
+        if (asset) asset.amount = loan.remaining;
+      }
+    }
+  }
+
+  if (selectedIncCat === 'loan_received') {
+    const lender = document.getElementById('inc-lender').value.trim() || 'Unknown';
+    const loanStart = document.getElementById('inc-loan-start').value || date;
+    const loanDue = document.getElementById('inc-loan-due').value || '';
+    const loanNotes = document.getElementById('inc-loan-notes').value || desc;
+    DB.loans.push({id:Date.now(), bank:lender, person:lender, amount, remaining:amount, startDate:loanStart, dueDate:loanDue, notes:loanNotes, date, settled:false, type:'borrowed'});
+    // Add or update liability
+    const existing = DB.liabilities.find(l => l.name === 'Loan Payable: '+lender);
+    if (existing) existing.amount += amount;
+    else DB.liabilities.push({name:'Loan Payable: '+lender, amount, type:'loan'});
+  }
+
+  DB.transactions.push({id:Date.now(), type:'income', category:cat.name, amount, description:desc, date});
+  saveData();
+
+  // If coming from insufficient-balance flow
+  if (window._pendingSpend) {
+    const ps = window._pendingSpend;
+    window._pendingSpend = null;
+    navigate('spending');
+    setTimeout(() => {
+      selectSpendCat(ps.cat);
+      document.getElementById('sp-amount').value = ps.amount;
+      document.getElementById('sp-desc').value = ps.desc;
+      document.getElementById('sp-date').value = ps.date;
+    }, 100);
+    return;
+  }
+
+  renderIncomePage();
+  showToast('✅ Income saved! ' + fmt(amount) + ' added.');
+  navigate('today');
+}
+
+// ============================================================
+// SPENDING
+// ============================================================
+function renderSpendingPage() {
+  selectedSpendCat = null;
+  document.getElementById('spend-form').style.display = 'none';
+  document.getElementById('insufficient-alert').style.display = 'none';
+  document.getElementById('spend-cats').innerHTML = SPEND_CATS.map(c => `
+    <div class="cat-btn" id="scat-${c.id}" onclick="selectSpendCat('${c.id}')">
+      <span class="cat-emoji">${c.emoji}</span>
+      <span class="cat-name">${c.name}</span>
+    </div>
+  `).join('');
+  document.getElementById('sp-date').value = getToday();
+}
+
+const PAYMENT_SUBCATS = [
+  {id:'loan_payment', emoji:'🏦', name:'Loan Repayment'},
+  {id:'utility', emoji:'💡', name:'Utility Bills'},
+  {id:'phone_net', emoji:'📱', name:'Phone & Internet'},
+  {id:'rent', emoji:'🏠', name:'Rent'},
+  {id:'taxes', emoji:'🧾', name:'Taxes'},
+  {id:'credit_card', emoji:'💳', name:'Credit Card'},
+  {id:'service_fee', emoji:'⚙️', name:'Service Fees'},
+  {id:'other_payment', emoji:'📋', name:'Other Payments'},
+];
+let selectedPaymentSub = null;
+let selectedPayableLoan = null;
+
+function selectSpendCat(id) {
+  selectedSpendCat = id;
+  selectedPaymentSub = null;
+  selectedPayableLoan = null;
+  document.querySelectorAll('#spend-cats .cat-btn').forEach(b => b.classList.remove('selected'));
+  const el = document.getElementById('scat-'+id);
+  if (el) el.classList.add('selected');
+  document.getElementById('spend-form').style.display = 'block';
+  document.getElementById('loan-given-fields').style.display = id === 'loan_given' ? 'block' : 'none';
+  document.getElementById('balance-warning').style.display = 'none';
+  const showPaySubs = id === 'payment';
+  document.getElementById('payment-subcats').style.display = showPaySubs ? 'block' : 'none';
+  if (showPaySubs) {
+    document.getElementById('payment-sub-grid').innerHTML = PAYMENT_SUBCATS.map(c => `
+      <div class="cat-btn" id="pscat-${c.id}" onclick="selectPaymentSub('${c.id}')">
+        <span class="cat-emoji">${c.emoji}</span>
+        <span class="cat-name">${c.name}</span>
+      </div>
+    `).join('');
+    document.getElementById('loan-payment-section').style.display = 'none';
+  }
+}
+
+function selectPaymentSub(id) {
+  selectedPaymentSub = id;
+  selectedPayableLoan = null;
+  document.querySelectorAll('#payment-sub-grid .cat-btn').forEach(b => b.classList.remove('selected'));
+  const el = document.getElementById('pscat-'+id);
+  if (el) el.classList.add('selected');
+  document.getElementById('loan-payment-section').style.display = id === 'loan_payment' ? 'block' : 'none';
+  if (id === 'loan_payment') renderPayableLoans();
+}
+
+function renderPayableLoans() {
+  const loans = DB.loans.filter(l => l.type === 'borrowed' && !l.settled);
+  const el = document.getElementById('payable-loans-list');
+  if (!loans.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:10px 0">No active borrowed loans to repay.</div>';
+    return;
+  }
+  el.innerHTML = loans.map(l => `
+    <div class="loan-item ${selectedPayableLoan===l.id?'selected':''}" onclick="selectPayableLoan(${l.id})">
+      <div class="loan-name">To: ${l.bank}</div>
+      <div class="loan-detail">Remaining: ${fmt(l.remaining||l.amount)} · Due: ${l.dueDate||'N/A'}</div>
+    </div>
+  `).join('');
+}
+
+function selectPayableLoan(id) {
+  selectedPayableLoan = id;
+  const loan = DB.loans.find(l => l.id === id);
+  if (loan) {
+    document.getElementById('sp-amount').value = loan.remaining || loan.amount;
+    document.getElementById('sp-desc').value = 'Repayment to ' + loan.bank;
+    checkBalance();
+  }
+  renderPayableLoans();
+}
+
+function checkBalance() {
+  const amount = parseFloat(document.getElementById('sp-amount').value) || 0;
+  const cash = getCashAtHand();
+  if (amount > cash && cash >= 0) {
+    const shortfall = amount - cash;
+    document.getElementById('balance-warning').style.display = 'block';
+    document.getElementById('balance-warning-content').innerHTML = `
+      <div class="alert-row"><span>You need:</span><span style="color:var(--red)">${fmt(amount)}</span></div>
+      <div class="alert-row"><span>You have:</span><span style="color:var(--green)">${fmt(cash)}</span></div>
+      <div class="alert-row"><span>Shortfall:</span><span style="color:var(--red);font-weight:700">${fmt(shortfall)}</span></div>
+    `;
+  } else {
+    document.getElementById('balance-warning').style.display = 'none';
+  }
+}
+
+function saveSpending() {
+  const cat = SPEND_CATS.find(c => c.id === selectedSpendCat);
+  if (!cat) { alert('Please select a spending category.'); return; }
+  const amount = parseFloat(document.getElementById('sp-amount').value);
+  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  const cash = getCashAtHand();
+  const desc = document.getElementById('sp-desc').value;
+  const date = document.getElementById('sp-date').value || getToday();
+  const notes = document.getElementById('sp-notes')?.value || '';
+
+  // Validate payment subcategory
+  if (selectedSpendCat === 'payment' && !selectedPaymentSub) {
+    alert('Please select a payment type.'); return;
+  }
+  if (selectedSpendCat === 'payment' && selectedPaymentSub === 'loan_payment' && !selectedPayableLoan) {
+    alert('Please select which loan you are repaying.'); return;
+  }
+  if (amount > cash) {
+    const shortfall = amount - cash;
+    // Show insufficient alert with income options
+    document.getElementById('insufficient-alert').style.display = 'block';
+    document.getElementById('insufficient-content').innerHTML = `
+      <div class="alert-row"><span>You need:</span><span style="color:var(--red)">${fmt(amount)}</span></div>
+      <div class="alert-row"><span>You have:</span><span style="color:var(--green)">${fmt(cash)}</span></div>
+      <div class="alert-row"><span>Shortfall:</span><span style="color:var(--red);font-weight:700">${fmt(shortfall)}</span></div>
+    `;
+    // Store pending spend
+    window._pendingSpend = {cat: selectedSpendCat, amount, desc, date};
+    // Show quick income options
+    document.getElementById('insufficient-income-cats').innerHTML = [
+      {id:'salary', emoji:'💼', name:'Salary'},
+      {id:'loan_received', emoji:'🏦', name:'Loan Received'},
+      {id:'gift', emoji:'🎁', name:'Gift'}
+    ].map(c => `
+      <div class="cat-btn" onclick="quickIncomeNav('${c.id}')">
+        <span class="cat-emoji">${c.emoji}</span>
+        <span class="cat-name">${c.name}</span>
+      </div>
+    `).join('');
+    document.getElementById('insufficient-alert').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  doSaveSpending(cat, amount, desc, date, notes);
+}
+
+function quickIncomeNav(catId) {
+  navigate('income');
+  setTimeout(() => selectIncCat(catId), 100);
+}
+
+function doSaveSpending(cat, amount, desc, date, notes) {
+  // Determine display category name for payment subcats
+  let displayCat = cat.name;
+  if (selectedSpendCat === 'payment' && selectedPaymentSub) {
+    const pSub = PAYMENT_SUBCATS.find(p => p.id === selectedPaymentSub);
+    if (pSub) displayCat = pSub.name;
+  }
+  DB.transactions.push({id:Date.now(), type:'spending', category:displayCat, amount, description:desc, date, notes});
+
+  // Auto-record assets/liabilities
+  const assetCats = {
+    'real_estate': {name:'Real Estate', type:'real_estate'},
+    'physical': {name:'Physical Asset', type:'physical'},
+    'financial': {name:'Financial Asset', type:'financial'},
+    'intangible': {name:'Intangible Asset', type:'intangible'},
+    'business_buy': {name:'Business Asset', type:'business'},
+  };
+  const liabCats = {
+    'luxury': 'Luxury Expense',
+    'personal': 'Personal Expense',
+    'others': 'Other Expense',
+  };
+  const paymentLiabNames = {
+    'loan_payment':'Loan Repayment','utility':'Utility Bill',
+    'phone_net':'Phone & Internet','rent':'Rent Payment',
+    'taxes':'Tax Payment','credit_card':'Credit Card Payment',
+    'service_fee':'Service Fee','other_payment':'Other Payment'
+  };
+
+  if (assetCats[selectedSpendCat]) {
+    const a = assetCats[selectedSpendCat];
+    DB.assets.push({name: a.name + (desc?' - '+desc:''), amount, type:a.type});
+  }
+  if (liabCats[selectedSpendCat]) {
+    DB.liabilities.push({name: liabCats[selectedSpendCat] + (desc?' - '+desc:''), amount, type:selectedSpendCat});
+  }
+  // Payment subcategory auto-liability
+  if (selectedSpendCat === 'payment' && selectedPaymentSub && selectedPaymentSub !== 'loan_payment') {
+    const lname = paymentLiabNames[selectedPaymentSub] || 'Payment';
+    DB.liabilities.push({name: lname + (desc?' - '+desc:''), amount, type:'payment'});
+  }
+  // Loan repayment under payments: reduce borrowed loan
+  if (selectedSpendCat === 'payment' && selectedPaymentSub === 'loan_payment' && selectedPayableLoan) {
+    const loan = DB.loans.find(l => l.id === selectedPayableLoan);
+    if (loan) {
+      loan.remaining = Math.max(0, (loan.remaining||loan.amount) - amount);
+      if (loan.remaining <= 0) {
+        loan.settled = true;
+        DB.liabilities = DB.liabilities.filter(l => l.name !== 'Loan Payable: '+loan.bank);
+      } else {
+        const liab = DB.liabilities.find(l => l.name === 'Loan Payable: '+loan.bank);
+        if (liab) liab.amount = loan.remaining;
+      }
+    }
+  }
+  if (selectedSpendCat === 'loan_given') {
+    const borrower = document.getElementById('sp-borrower').value || 'Unknown';
+    const dueDate = document.getElementById('sp-due').value || '';
+    const loanId = Date.now() + 1;
+    DB.loans.push({id:loanId, bank:borrower, person:borrower, amount, remaining:amount, startDate:date, dueDate, notes, date, settled:false, type:'given'});
+    DB.assets.push({name:'Loan Receivable: '+borrower, amount, type:'loan_receivable'});
+  }
+
+  saveData();
+  renderSpendingPage();
+  showToast('✅ Spending saved! ' + fmt(amount) + ' deducted.');
+  navigate('today');
+}
+
+// ============================================================
+// LEDGER
+// ============================================================
+function renderLedger() {
+  const cash = getCashAtHand();
+  document.getElementById('ledger-banner').innerHTML = `
+    <span class="ledger-banner-icon">💵</span>
+    <div>
+      <div class="ledger-banner-text">Cash at Hand</div>
+      <div class="ledger-banner-amt">${fmt(cash)}</div>
+    </div>
+  `;
+
+  // Group transactions by date
+  const byDate = {};
+  DB.transactions.forEach(t => {
+    if (!byDate[t.date]) byDate[t.date] = {income:[], spending:[]};
+    byDate[t.date][t.type].push(t);
+  });
+
+  const dates = Object.keys(byDate).sort();
+  if (!dates.length) {
+    document.getElementById('ledger-body').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No transactions yet.</td></tr>';
+    return;
+  }
+
+  let running = 0;
+  let rows = '';
+  dates.forEach(date => {
+    const opening = running;
+    const dayInc = byDate[date].income.reduce((s,t) => s + Number(t.amount), 0);
+    const dayExp = byDate[date].spending.reduce((s,t) => s + Number(t.amount), 0);
+    const closing = opening + dayInc - dayExp;
+
+    const incItems = byDate[date].income.map(t => `<div class="td-income">+ ${fmt(t.amount)} <span style="color:var(--text3)">${t.category}</span></div>`).join('') || '<span style="color:var(--text3)">—</span>';
+    const expItems = byDate[date].spending.map(t => `<div class="td-expense">- ${fmt(t.amount)} <span style="color:var(--text3)">${t.category}</span></div>`).join('') || '<span style="color:var(--text3)">—</span>';
+
+    rows += `<tr>
+      <td class="td-bold">${date}</td>
+      <td>${fmt(opening)}</td>
+      <td class="td-items">${incItems}</td>
+      <td class="td-items">${expItems}</td>
+      <td class="td-expense td-bold">${dayExp > 0 ? fmt(dayExp) : '—'}</td>
+      <td class="td-bold" style="color:${closing>=0?'var(--green)':'var(--red)'}">${fmt(closing)}</td>
+    </tr>`;
+    running = closing;
+  });
+
+  document.getElementById('ledger-body').innerHTML = rows;
+}
+
+// ============================================================
+// MONTHLY SUMMARY
+// ============================================================
+function renderMonthly() {
+  const now = new Date();
+  const monthEl = document.getElementById('monthly-month');
+  if (!monthEl.value) {
+    monthEl.value = now.toISOString().slice(0,7);
+  }
+  monthEl.onchange = buildMonthly;
+  buildMonthly();
+}
+
+function buildMonthly() {
+  const month = document.getElementById('monthly-month').value;
+  if (!month) return;
+  const [yr, mo] = month.split('-').map(Number);
+  const txns = DB.transactions.filter(t => t.date.startsWith(month));
+
+  if (!txns.length) {
+    document.getElementById('monthly-content').innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px">No transactions for this month.</div>';
+    return;
+  }
+
+  // Split into weeks
+  function getWeekOfMonth(dateStr) {
+    const d = new Date(dateStr);
+    const day = d.getDate();
+    return Math.ceil(day / 7);
+  }
+
+  const weeks = {};
+  txns.forEach(t => {
+    const w = getWeekOfMonth(t.date);
+    if (!weeks[w]) weeks[w] = [];
+    weeks[w].push(t);
+  });
+
+  // Running cash to get end-of-week balance
+  const allTxnsSorted = DB.transactions.slice().sort((a,b) => a.date.localeCompare(b.date));
+
+  let html = '';
+  Object.keys(weeks).sort((a,b) => a-b).forEach(wk => {
+    const wtxns = weeks[wk];
+    const winc = wtxns.filter(t => t.type==='income');
+    const wexp = wtxns.filter(t => t.type==='spending');
+    const totalInc = winc.reduce((s,t) => s+Number(t.amount), 0);
+    const totalExp = wexp.reduce((s,t) => s+Number(t.amount), 0);
+
+    // End of week date
+    const wDates = wtxns.map(t => t.date).sort();
+    const endDate = wDates[wDates.length-1];
+    const endBal = getCashAtHand(endDate);
+
+    // Top 3 expenses by amount
+    const top3Exp = wexp.slice().sort((a,b) => b.amount-a.amount).slice(0,3);
+    const top3Inc = winc.slice().sort((a,b) => b.amount-a.amount).slice(0,3);
+
+    // Most frequent expense category
+    const freqMap = {};
+    wexp.forEach(t => { freqMap[t.category] = (freqMap[t.category]||0)+1; });
+    const mostFreq = Object.entries(freqMap).sort((a,b) => b[1]-a[1])[0];
+
+    const startDay = (parseInt(wk)-1)*7+1;
+    const endDay = Math.min(parseInt(wk)*7, new Date(yr, mo, 0).getDate());
+
+    html += `<div class="week-card">
+      <div class="week-title">Week ${wk} (${yr}-${String(mo).padStart(2,'0')}-${String(startDay).padStart(2,'0')} to ${String(endDay).padStart(2,'0')})</div>
+      <div class="week-stats">
+        <div class="week-stat">
+          <div class="week-stat-label">Income</div>
+          <div class="week-stat-val" style="color:var(--green)">${fmt(totalInc)}</div>
+        </div>
+        <div class="week-stat">
+          <div class="week-stat-label">Expenses</div>
+          <div class="week-stat-val" style="color:var(--red)">${fmt(totalExp)}</div>
+        </div>
+        <div class="week-stat">
+          <div class="week-stat-label">Cash at Hand</div>
+          <div class="week-stat-val" style="color:${endBal>=0?'var(--gold2)':'var(--red)'}">${fmt(endBal)}</div>
+        </div>
+      </div>
+      ${top3Exp.length ? `<div class="week-top">
+        <div class="week-top-title">🔴 Top 3 Expenses</div>
+        ${top3Exp.map(t=>`<div class="week-top-item"><span>${t.category}${t.description?' — '+t.description:''}</span><span style="color:var(--red)">${fmt(t.amount)}</span></div>`).join('')}
+      </div>` : ''}
+      ${top3Inc.length ? `<div class="week-top" style="margin-top:8px">
+        <div class="week-top-title">🟢 Top 3 Income</div>
+        ${top3Inc.map(t=>`<div class="week-top-item"><span>${t.category}${t.description?' — '+t.description:''}</span><span style="color:var(--green)">${fmt(t.amount)}</span></div>`).join('')}
+      </div>` : ''}
+      ${mostFreq ? `<div class="week-top" style="margin-top:8px">
+        <div class="week-top-title">🔁 Most Frequent Expense</div>
+        <div class="week-top-item"><span>${mostFreq[0]}</span><span style="color:var(--text3)">${mostFreq[1]}× this week</span></div>
+      </div>` : ''}
+    </div>`;
+  });
+  document.getElementById('monthly-content').innerHTML = html;
+}
+
+// ============================================================
+// VALUE FOLDER
+// ============================================================
+function renderValue() {
+  renderAssets();
+  renderLiabilities();
+}
+
+function renderAssets() {
+  const total = DB.assets.reduce((s,a) => s+Number(a.amount), 0);
+  document.getElementById('total-assets-val').textContent = fmt(total);
+  if (!DB.assets.length) {
+    document.getElementById('assets-list').innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:10px">No assets recorded yet.</div>';
+    return;
+  }
+  document.getElementById('assets-list').innerHTML = DB.assets.map((a,i) => `
+    <div class="al-item">
+      <span class="al-name">${a.name}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="al-amt">${fmt(a.amount)}</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteAsset(${i})" style="padding:4px 8px;font-size:11px">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLiabilities() {
+  const total = DB.liabilities.reduce((s,l) => s+Number(l.amount), 0);
+  document.getElementById('total-liabilities-val').textContent = fmt(total);
+  if (!DB.liabilities.length) {
+    document.getElementById('liabilities-list').innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:10px">No liabilities recorded yet.</div>';
+    return;
+  }
+  document.getElementById('liabilities-list').innerHTML = DB.liabilities.map((l,i) => `
+    <div class="al-item">
+      <span class="al-name">${l.name}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="al-amt red">${fmt(l.amount)}</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteLiability(${i})" style="padding:4px 8px;font-size:11px">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function switchValTab(tab, btn) {
+  document.getElementById('val-assets-tab').style.display = tab==='assets'?'block':'none';
+  document.getElementById('val-liabilities-tab').style.display = tab==='liabilities'?'block':'none';
+  document.querySelectorAll('#page-value .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function deleteAsset(i) {
+  if (!confirm('Delete this asset?')) return;
+  DB.assets.splice(i,1);
+  saveData();
+  renderAssets();
+}
+
+function deleteLiability(i) {
+  if (!confirm('Delete this liability?')) return;
+  DB.liabilities.splice(i,1);
+  saveData();
+  renderLiabilities();
+}
+
+function openAddAsset() {
+  showModal('Add Asset', `
+    <div class="form-group"><label>Name</label><input type="text" id="m-aname" placeholder="Asset name"></div>
+    <div class="form-group"><label>Value (UGX)</label><input type="number" id="m-aval" placeholder="0"></div>
+    <div class="form-group"><label>Type</label>
+      <select id="m-atype">
+        <option value="real_estate">Real Estate</option>
+        <option value="physical">Physical Asset</option>
+        <option value="financial">Financial Asset</option>
+        <option value="intangible">Intangible Asset</option>
+        <option value="business">Business Asset</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="saveNewAsset()">Save Asset</button>
+  `);
+}
+
+function saveNewAsset() {
+  const name = document.getElementById('m-aname').value.trim();
+  const amount = parseFloat(document.getElementById('m-aval').value);
+  const type = document.getElementById('m-atype').value;
+  if (!name || !amount) { alert('Please fill all fields.'); return; }
+  DB.assets.push({name, amount, type});
+  saveData();
+  closeModal();
+  renderAssets();
+}
+
+function openAddLiability() {
+  showModal('Add Liability', `
+    <div class="form-group"><label>Name</label><input type="text" id="m-lname" placeholder="Liability name"></div>
+    <div class="form-group"><label>Amount (UGX)</label><input type="number" id="m-lval" placeholder="0"></div>
+    <div class="form-group"><label>Type</label>
+      <select id="m-ltype">
+        <option value="bill">Bill / Payment</option>
+        <option value="luxury">Luxury</option>
+        <option value="personal">Personal</option>
+        <option value="loan">Loan Payable</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="saveNewLiability()">Save Liability</button>
+  `);
+}
+
+function saveNewLiability() {
+  const name = document.getElementById('m-lname').value.trim();
+  const amount = parseFloat(document.getElementById('m-lval').value);
+  const type = document.getElementById('m-ltype').value;
+  if (!name || !amount) { alert('Please fill all fields.'); return; }
+  DB.liabilities.push({name, amount, type});
+  saveData();
+  closeModal();
+  renderLiabilities();
+}
+
+// ============================================================
+// SAFE FOLDER
+// ============================================================
+function renderSafe() {
+  renderLoansGiven();
+  renderLoansBorrowed();
+}
+
+function switchSafeTab(tab, btn) {
+  document.getElementById('safe-given-tab').style.display = tab==='given'?'block':'none';
+  document.getElementById('safe-borrowed-tab').style.display = tab==='borrowed'?'block':'none';
+  document.querySelectorAll('#page-safe .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderLoansGiven() {
+  const loans = DB.loans.filter(l => l.type === 'given');
+  const el = document.getElementById('loans-given-list');
+  if (!loans.length) {
+    el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px">No loans given out.</div>';
+    return;
+  }
+  el.innerHTML = loans.map(l => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-weight:700;color:var(--text)">${l.bank}</div>
+        <span class="badge ${l.settled?'badge-blue':'badge-gold'}">${l.settled?'Settled':'Active'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Principal: ${fmt(l.amount)}</div>
+      <div style="font-size:12px;color:${l.settled?'var(--green)':'var(--red)'}">Remaining: ${fmt(l.remaining||l.amount)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Given: ${l.startDate||l.date} · Due: ${l.dueDate||'N/A'}</div>
+      ${l.notes?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${l.notes}</div>`:''}
+    </div>
+  `).join('');
+}
+
+function renderLoansBorrowed() {
+  const loans = DB.loans.filter(l => l.type === 'borrowed');
+  const el = document.getElementById('loans-borrowed-list');
+  if (!loans.length) {
+    el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px">No loans borrowed.</div>';
+    return;
+  }
+  el.innerHTML = loans.map(l => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-weight:700;color:var(--text)">From: ${l.bank}</div>
+        <span class="badge ${l.settled?'badge-blue':'badge-red'}">${l.settled?'Settled':'Owing'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Amount: ${fmt(l.amount)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Date: ${l.date}</div>
+    </div>
+  `).join('');
+}
+
+function openAddBorrowedLoan() {
+  showModal('Record Borrowed Loan', `
+    <div class="form-group"><label>Lender Name</label><input type="text" id="m-blender" placeholder="Who lent you money?"></div>
+    <div class="form-group"><label>Amount (UGX)</label><input type="number" id="m-bamt" placeholder="0"></div>
+    <div class="form-group"><label>Date</label><input type="date" id="m-bdate" value="${getToday()}"></div>
+    <div class="form-group"><label>Notes</label><textarea id="m-bnotes" placeholder="Optional"></textarea></div>
+    <button class="btn btn-gold btn-full" onclick="saveBorrowedLoan()">Save</button>
+  `);
+}
+
+function saveBorrowedLoan() {
+  const lender = document.getElementById('m-blender').value.trim();
+  const amount = parseFloat(document.getElementById('m-bamt').value);
+  const date = document.getElementById('m-bdate').value;
+  const notes = document.getElementById('m-bnotes').value;
+  if (!lender || !amount) { alert('Please fill required fields.'); return; }
+  DB.loans.push({id:Date.now(), bank:lender, person:lender, amount, remaining:amount, startDate:date, dueDate:'', notes, date, settled:false, type:'borrowed'});
+  DB.liabilities.push({name:'Loan Payable: '+lender, amount, type:'loan'});
+  DB.transactions.push({id:Date.now()+1, type:'income', category:'Loan Received', amount, description:'From '+lender, date});
+  saveData();
+  closeModal();
+  renderSafe();
+  showToast('Loan recorded and added to income.');
+}
+
+// ============================================================
+// AUDITOR
+// ============================================================
+function renderAuditor() {
+  const cash = getCashAtHand();
+  const totalAssets = DB.assets.reduce((s,a) => s+Number(a.amount), 0);
+  const totalLiab = DB.liabilities.reduce((s,l) => s+Number(l.amount), 0);
+  const netWorth = totalAssets - totalLiab;
+
+  let nwClass, nwLabel, advice;
+  if (netWorth < 0) {
+    nwClass = 'negative';
+    nwLabel = '⚠️ NEGATIVE NET WORTH';
+    advice = 'Your liabilities exceed your assets. Reduce spending on non-essential items. Focus on paying down loans. Look for additional income sources.';
+  } else if (netWorth < 1000000) {
+    nwClass = 'neutral';
+    nwLabel = '📊 Net Worth';
+    advice = 'Your net worth is positive but could be stronger. Continue building assets. Reduce recurring liability expenses.';
+  } else {
+    nwClass = 'positive';
+    nwLabel = '✅ Excellent Net Worth';
+    advice = 'Excellent financial health! Consider diversifying into more assets. Look into long-term investments.';
+  }
+
+  document.getElementById('auditor-content').innerHTML = `
+    <div class="networth-card ${nwClass}">
+      <div class="networth-label ${nwClass}">${nwLabel}</div>
+      <div class="networth-value" style="color:${nwClass==='negative'?'var(--red)':nwClass==='positive'?'var(--green)':'var(--blue)'}">${fmt(netWorth)}</div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px">📊 Financial Summary</div>
+      <div class="al-item">
+        <span class="al-name">💵 Cash at Hand <span style="font-size:10px;color:var(--text3)">(independent)</span></span>
+        <span class="al-amt" style="color:${cash>=0?'var(--green)':'var(--red)'}">${fmt(cash)}</span>
+      </div>
+      <div class="al-item">
+        <span class="al-name">🏦 Total Assets Value</span>
+        <span class="al-amt">${fmt(totalAssets)}</span>
+      </div>
+      <div class="al-item">
+        <span class="al-name">📋 Total Liabilities Value</span>
+        <span class="al-amt red">${fmt(totalLiab)}</span>
+      </div>
+      <div class="al-item" style="border-top:2px solid var(--border2);margin-top:8px;padding-top:12px">
+        <span style="font-weight:700;color:var(--text)">Net Worth (Assets − Liabilities)</span>
+        <span style="font-weight:700;font-size:1.1rem;color:${netWorth>=0?'var(--green)':'var(--red)'}">${fmt(netWorth)}</span>
+      </div>
+    </div>
+    <div class="advice-box">💡 <strong>Advisor:</strong> ${advice}</div>
+    ${DB.assets.length ? `<div class="card" style="margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">Asset Breakdown</div>
+      ${DB.assets.map(a=>`<div class="al-item"><span class="al-name">${a.name}</span><span class="al-amt">${fmt(a.amount)}</span></div>`).join('')}
+    </div>` : ''}
+    ${DB.liabilities.length ? `<div class="card">
+      <div class="section-title" style="margin-bottom:10px">Liability Breakdown</div>
+      ${DB.liabilities.map(l=>`<div class="al-item"><span class="al-name">${l.name}</span><span class="al-amt red">${fmt(l.amount)}</span></div>`).join('')}
+    </div>` : ''}
+  `;
+}
+
+// ============================================================
+// SECRETS VAULT
+// ============================================================
+let openSecretId = null;
+
+function renderSecrets() {
+  const el = document.getElementById('secrets-list');
+  if (!DB.secrets.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px">No secrets yet. Tap "+ Add Secret" to begin.</div>';
+    return;
+  }
+  el.innerHTML = DB.secrets.map(s => `
+    <div class="secret-item">
+      <div class="secret-header" onclick="toggleSecret(${s.id})">
+        <div>
+          <div style="font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px">🔐 ${s.title}</div>
+          <div class="secret-meta">${s.createdAt}</div>
+        </div>
+        <div style="color:var(--text3);font-size:1.2rem">${openSecretId===s.id?'▲':'▼'}</div>
+      </div>
+      ${openSecretId===s.id ? `
+        <div class="secret-body">
+          ${s.description ? `<div class="secret-desc">${s.description}</div>` : ''}
+          ${s.fileData ? (
+            s.fileType && s.fileType.startsWith('image/') ?
+              `<img src="${s.fileData}" class="secret-preview" alt="${s.fileName}">
+               <a href="${s.fileData}" download="${s.fileName}" class="btn btn-sm btn-outline" style="margin-top:8px;display:inline-flex">⬇ Download ${s.fileName}</a>` :
+              `<div class="secret-file">📄 ${s.fileName} <a href="${s.fileData}" download="${s.fileName}" class="btn btn-sm btn-gold" style="margin-left:auto">⬇ Download</a></div>`
+          ) : ''}
+          <div style="margin-top:12px">
+            <button class="btn btn-danger btn-sm" onclick="deleteSecret(${s.id})">🗑 Delete Secret</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function toggleSecret(id) {
+  openSecretId = openSecretId === id ? null : id;
+  renderSecrets();
+}
+
+function deleteSecret(id) {
+  if (!confirm('Delete this secret permanently?')) return;
+  DB.secrets = DB.secrets.filter(s => s.id !== id);
+  if (openSecretId === id) openSecretId = null;
+  saveData();
+  renderSecrets();
+}
+
+function openAddSecret() {
+  showModal('Add New Secret', `
+    <div class="form-group">
+      <label>Title (required - shown on list)</label>
+      <input type="text" id="m-stitle" placeholder="e.g. Bank Account Details">
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea id="m-sdesc" placeholder="Detailed notes..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Attach File (optional, max 5MB)</label>
+      <input type="file" id="m-sfile" accept="image/png,image/jpg,image/jpeg,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.txt" style="padding:8px">
+    </div>
+    <button class="btn btn-gold btn-full" onclick="saveSecret()">🔐 Save Secret</button>
+  `);
+}
+
+function saveSecret() {
+  const title = document.getElementById('m-stitle').value.trim();
+  if (!title) { alert('Title is required.'); return; }
+  const desc = document.getElementById('m-sdesc').value;
+  const fileInput = document.getElementById('m-sfile');
+  const file = fileInput.files[0];
+
+  function doSave(fileData, fileType, fileName) {
+    DB.secrets.push({
+      id: Date.now(),
+      title, description: desc,
+      fileData: fileData || null,
+      fileType: fileType || null,
+      fileName: fileName || null,
+      createdAt: getToday()
+    });
+    saveData();
+    closeModal();
+    renderSecrets();
+  }
+
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) { alert('File exceeds 5MB limit.'); return; }
+    const reader = new FileReader();
+    reader.onload = e => doSave(e.target.result, file.type, file.name);
+    reader.readAsDataURL(file);
+  } else {
+    doSave(null, null, null);
+  }
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function showModal(title, content) {
+  document.getElementById('modal-content').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" style="margin-bottom:0">${title}</div>
+      <span class="modal-close" onclick="closeModal()">✕</span>
+    </div>
+    ${content}
+  `;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:12px 20px;border-radius:var(--radius);font-size:13px;z-index:500;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.style.display='none',300); }, 2500);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function exportData() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "silvers-wallet-" + getToday() + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  closeSidebar();
+}
+
+function clearAllData() {
+  if (!confirm("Delete ALL data permanently? This cannot be undone.")) return;
+  DB = {transactions:[],loans:[],secrets:[],assets:[],liabilities:[]};
+  saveData();
+  navigate('today');
+  showToast('All data cleared.');
+}
+</script>
+</body>
+</html>
